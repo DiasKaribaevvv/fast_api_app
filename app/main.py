@@ -62,10 +62,26 @@ async def create_post(new_post:Post):
     my_posts.append(post_dict)
     return {"message":"post added"}
 
-@app.delete("/posts/delete/{id}",status_code=status.HTTP_200_OK)
+@app.delete("/posts/delete/{id}",status_code=status.HTTP_204_NO_CONTENT)
 async def delete_post(id: int):
 
     index = find_index(id)
+    if index == None:
+        raise HTTPException(status_code=status.HTTP_404_NOT_FOUND,detail=f"There is no post with id = {id}")
+
     my_posts.pop(index)
 
-    return {"message":"post deleted!"}
+    return Response(status_code=status.HTTP_204_NO_CONTENT)
+
+@app.put("/posts/update/{id}")
+async def update_post(id: int,post : Post):
+    index = find_index(id)
+    if index == None:
+        raise HTTPException(status_code=status.HTTP_404_NOT_FOUND,detail=f"There is no post with id = {id}")
+
+    post_dict = post.dict()
+    post_dict["id"]=id
+    my_posts[index]=post_dict
+
+
+    return {"data":"post updated"}
