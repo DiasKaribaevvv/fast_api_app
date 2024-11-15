@@ -1,3 +1,4 @@
+from fileinput import close
 from select import error
 from typing import Optional
 
@@ -10,9 +11,23 @@ import psycopg2
 from psycopg2.extras import RealDictCursor
 import time
 
+from sqlalchemy.orm import Session
 
+from . import model
+from . import database
+from .database import engine, SessionLocal
 
+model.Base.metadata.create_all(bind=engine)
 app = FastAPI()
+
+
+
+def get_db():
+    db= SessionLocal()
+    try:
+        yield db
+    finally:
+        db.close()
 
 class Post(BaseModel):
     title: str
