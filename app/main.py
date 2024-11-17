@@ -11,7 +11,7 @@ import psycopg2
 from psycopg2.extras import RealDictCursor
 import time
 
-from sqlalchemy.orm import Session
+from sqlalchemy.orm import Session, sessionmaker
 
 from . import model
 from . import database
@@ -19,11 +19,12 @@ from .database import engine, SessionLocal
 
 model.Base.metadata.create_all(bind=engine)
 app = FastAPI()
-
+Session = SessionLocal()
 
 
 def get_db():
     db= SessionLocal()
+
     try:
         yield db
     finally:
@@ -96,9 +97,14 @@ async def get_latest_post():
 
 @app.post("/createpost",status_code=status.HTTP_201_CREATED)
 async def create_post(new_post:Post):
-    cursor.execute(f"""INSERT INTO posts (title,content) VALUES (%s,%s) RETURNING *""",(new_post.title,new_post.content))
-    post = cursor.fetchone()
-    conn.commit()
+    post = model.Post(title=new_post.title,content = new_post.content)
+    Session.add(post)
+    Session.commit()
+
+
+    # cursor.execute(f"""INSERT INTO posts (title,content) VALUES (%s,%s) RETURNING *""",(new_post.title,new_post.content))
+    # post = cursor.fetchone()
+    # conn.commit()
 
     return {"message":post}
 
