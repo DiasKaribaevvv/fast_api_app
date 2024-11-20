@@ -28,3 +28,9 @@ class UserResponse(BaseModel):
 
     class Config:
         orm_mode = True
+
+class UserLoginResponse(BaseModel):
+
+    email:EmailStr
+    class Config:
+        orm_mode = True
