@@ -1,4 +1,3 @@
-
 from fastapi import FastAPI,Response,status,HTTPException
 import psycopg2
 from psycopg2.extras import RealDictCursor

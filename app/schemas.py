@@ -34,3 +34,11 @@ class UserLoginResponse(BaseModel):
     email:EmailStr
     class Config:
         orm_mode = True
+
+
+class Token(BaseModel):
+    access_token: str
+    token_type: str
+
+class TokenData(BaseModel):
+    id: int | None = None
