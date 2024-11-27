@@ -7,7 +7,7 @@ from app import model
 from app import schemas
 from fastapi import FastAPI,Response,status,HTTPException,APIRouter
 from fastapi.params import Depends
-
+from app import oauth2
 
 
 router =APIRouter(
@@ -44,8 +44,8 @@ async def get_latest_post():
 
 
 @router.post("/createpost", status_code=status.HTTP_201_CREATED, response_model=schemas.PostResponse)
-async def create_post(new_post: schemas.PostBase, db: Session = Depends(get_db)):
-    post = model.Post(**new_post.dict())
+async def create_post(new_post: schemas.PostBase, db: Session = Depends(get_db),get_current_user: int = Depends(oauth2.get_current_user)):
+    post = model.Post(user_id = get_current_user.id , **new_post.dict())
     db.add(post)
     db.commit()
     db.refresh(post)
@@ -59,25 +59,33 @@ async def create_post(new_post: schemas.PostBase, db: Session = Depends(get_db))
 
 
 @router.delete("/delete/{id}", status_code=status.HTTP_204_NO_CONTENT)
-async def delete_post(id: int, db: Session = Depends(get_db)):
-    post = db.query(model.Post).filter(model.Post.id == id)
+async def delete_post(id: int, db: Session = Depends(get_db),get_current_user: int = Depends(oauth2.get_current_user)):
+    post = db.query(model.Post).filter(model.Post.id == id).first()
 
     # cursor.execute("""DELETE FROM posts WHERE id = %s returning *""",(str(id)))
     # delete_post_var = cursor.fetchone()
     # conn.commit()
     if not post:
         raise HTTPException(status_code=status.HTTP_404_NOT_FOUND, detail=f"There is no post with id = {id}")
+
+    if post.user_id != get_current_user.id:
+        raise HTTPException(status_code=status.HTTP_401_UNAUTHORIZED,detail=f"Can not perform this action")
+
     db.delete(post)
     db.commit()
     return Response(status_code=status.HTTP_204_NO_CONTENT)
 
 
 @router.put("/update/{id}")
-async def update_post(id: int, new_post: schemas.PostBase, db: Session = Depends(get_db)):
+async def update_post(id: int, new_post: schemas.PostBase, db: Session = Depends(get_db),get_current_user: int =  Depends(oauth2.get_current_user)):
     post = db.query(model.Post).filter(model.Post.id == id)
 
     if not post.first():
         raise HTTPException(status_code=status.HTTP_404_NOT_FOUND, detail=f"There is no post with id = {id}")
+
+    if post.first().user_id != get_current_user.id:
+        raise HTTPException(status_code=status.HTTP_401_UNAUTHORIZED,detail=f"Can not perform this action")
+
 
     post.update(new_post.dict())
     # print(new_post.dict())
